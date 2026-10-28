@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terre 1:1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/ui.css">
+<script type="importmap">
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-6.2-6.5-11.2a6.5 6.5 0 0 1 13 0C18.5 14.8 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.3"/></symbol>
+  <symbol id="i-keys" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h1M9.5 10h1M13 10h1M16.5 10h1.5M6 14h12"/></symbol>
+  <symbol id="i-fly" viewBox="0 0 24 24"><path d="M3 15c4-1 7-3.5 9-7l2.5 1.2L13 13l6.5 1.5 1.5 2.5-9-.5-6 2.5z"/></symbol>
+  <symbol id="i-run" viewBox="0 0 24 24"><circle cx="14.5" cy="4.5" r="1.8"/><path d="M8 20l3-5.5 3 2.5v4M6 11.5l3.5-3h4l2 3.5 3 1M11 8.5l-1.5 5"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M6 12h12M12 6v12"/></symbol>
+  <symbol id="i-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.5"/><ellipse cx="12" cy="12" rx="9.5" ry="4" transform="rotate(-25 12 12)"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M14 4c3 0 6 3 6 6l-8 8-6-6z"/><path d="M8 14l-3 1-2 4 4-2 1-3M15 9h.01"/></symbol>
+  <symbol id="i-rock" viewBox="0 0 24 24"><path d="M9 6l6-1 4 4-1 6-5 4-6-2-2-6z"/><path d="M3 21l3-3M6 21l2-2M3 18l2-2"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9.5l5 5M21 9.5l-5 5"/></symbol>
+</svg>
+
+<div id="labels" aria-hidden="true"></div>
+<div id="reticle" aria-hidden="true"></div>
+<div id="ui">
+  <!-- instruments -->
+  <section id="instr" aria-label="Instruments">
+    <div class="read"><span class="lbl">Altitude</span><span class="val" id="r-alt">0</span><span class="unit" id="r-alt-u">m</span></div>
+    <div class="read"><span class="lbl">Vitesse</span><span class="val" id="r-spd">0</span><span class="unit" id="r-spd-u">km/h</span></div>
+    <div class="sub" id="r-sub">Mach 0,00</div>
+  </section>
+
+  <div id="compass" aria-hidden="true"><div id="tape"></div><div id="cmark"></div><div id="cdeg">0°</div></div>
+
+  <!-- search -->
+  <section id="find">
+    <label class="field">
+      <svg class="ic"><use href="#i-search"/></svg>
+      <input id="q" type="search" placeholder="Aller à… (ville, montagne, monument)" autocomplete="off" spellcheck="false" aria-label="Rechercher un lieu">
+      <kbd>K</kbd>
+    </label>
+    <ul id="results" role="listbox" hidden></ul>
+    <div id="where">–</div>
+  </section>
+
+  <!-- dock -->
+  <div id="dockwrap">
+    <section id="sheet" hidden aria-label="Toutes les commandes">
+      <div class="col">
+        <h2>Pilotage</h2>
+        <dl class="keys">
+          <dt><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>avancer, reculer, côtés <span class="dim">(WASD en QWERTY)</span></dd>
+          <dt><kbd>Souris</kbd></dt><dd>regarder</dd>
+          <dt><kbd>Espace</kbd> <kbd>C</kbd></dt><dd>monter, descendre · sauter en course</dd>
+          <dt><kbd>Maj</kbd></dt><dd>super-vitesse ×8 · Mach 1 en course</dd>
+          <dt><kbd>Molette</kbd></dt><dd>régler la vitesse</dd>
+          <dt><kbd>F</kbd></dt><dd>vol ou course</dd>
+          <dt><kbd>T</kbd> <kbd>G</kbd></dt><dd>faire défiler l'heure</dd>
+          <dt><kbd>0</kbd></dt><dd>monter en orbite</dd>
+          <dt><kbd>K</kbd></dt><dd>rechercher un lieu</dd>
+          <dt><kbd>P</kbd></dt><dd>mode photo, sans interface</dd>
+          <dt><kbd>M</kbd></dt><dd>couper ou remettre le son</dd>
+          <dt><kbd>X</kbd> <kbd>Clic droit</kbd></dt><dd>tirer là où tu regardes</dd>
+          <dt><kbd>V</kbd></dt><dd>changer d'arme : missile ou astéroïde (tsunami en mer)</dd>
+          <dt><kbd>Échap</kbd></dt><dd>libérer la souris</dd>
+        </dl>
+      </div>
+      <div class="col">
+        <h2>Lieux</h2>
+        <div id="places" class="chips"></div>
+        <h2>Monuments de Paris en 3D</h2>
+        <div id="marks" class="chips"></div>
+        <h2>Lune, Mars et système solaire</h2>
+        <div id="spacebox" class="chips"></div>
+        <h2>Affichage</h2>
+        <div class="toggles">
+          <label class="tg"><input type="checkbox" data-cfg="clouds"><span>Nuages</span></label>
+          <label class="tg"><input type="checkbox" data-cfg="trees"><span>Forêts</span></label>
+          <label class="tg"><input type="checkbox" data-cfg="buildings"><span>Bâtiments</span></label>
+          <label class="tg"><input type="checkbox" data-cfg="sound"><span>Son du vent</span></label>
+        </div>
+        <button class="danger" id="clearCraters">Effacer les cratères</button>
+        <div class="seg small" id="quality" role="radiogroup" aria-label="Qualité">
+          <button data-q="eco" role="radio">Économe</button><button data-q="high" role="radio">Détaillée</button>
+        </div>
+      </div>
+    </section>
+
+    <nav id="dock" aria-label="Commandes principales">
+      <div class="seg" id="mode" role="radiogroup" aria-label="Déplacement">
+        <button data-mode="fly" role="radio" title="Voler (F)"><svg class="ic"><use href="#i-fly"/></svg>Vol</button>
+        <button data-mode="run" role="radio" title="Courir (F)"><svg class="ic"><use href="#i-run"/></svg>Course</button>
+      </div>
+      <div class="grp" id="speed" aria-label="Vitesse">
+        <button class="ib" data-sp="0.8" aria-label="Plus lent"><svg class="ic"><use href="#i-minus"/></svg></button>
+        <output id="spmul">×1,0</output>
+        <button class="ib" data-sp="1.25" aria-label="Plus rapide"><svg class="ic"><use href="#i-plus"/></svg></button>
+      </div>
+      <label class="grp time" title="Heure solaire locale (T / G)">
+        <svg class="ic"><use href="#i-sun"/></svg>
+        <input id="hour" type="range" min="0" max="24" step="0.05" aria-label="Heure du jour">
+        <output id="hourv">12:00</output>
+      </label>
+      <button class="ib" id="orbit" title="Orbite (0)" aria-label="Monter en orbite"><svg class="ic"><use href="#i-orbit"/></svg></button>
+      <button class="ib" id="weapon" title="Arme : missile (V pour changer)" aria-label="Changer d'arme" aria-pressed="false"><svg class="ic"><use href="#i-rocket"/></svg></button>
+      <button class="ib fire" id="fire" title="Tirer un missile (X ou clic droit)" aria-label="Tirer un missile"><svg class="ic"><use href="#i-target"/></svg></button>
+      <button class="ib" id="photo" title="Mode photo (P)" aria-label="Mode photo"><svg class="ic"><use href="#i-camera"/></svg></button>
+      <button class="ib" id="mute" title="Couper le son (M)" aria-label="Couper le son" aria-pressed="false"><svg class="ic"><use href="#i-sound"/></svg></button>
+      <button class="more" id="more" aria-expanded="false" aria-controls="sheet"><svg class="ic"><use href="#i-keys"/></svg>Commandes<svg class="ic chev"><use href="#i-chev"/></svg></button>
+    </nav>
+  </div>
+
+  <div id="hint"></div>
+  <div id="toast" role="status"></div>
+  <div id="flash"></div>
+  <footer id="foot"><span id="stats">–</span> · Images © Esri, Maxar, Earthstar · Relief AWS Terrain Tiles · Bâtiments et forêts © OpenStreetMap, OpenFreeMap · Planètes Solar System Scope (CC BY 4.0) · Étoiles Yale BSC via d3-celestial</footer>
+</div>
+
+<div id="boot">
+  <div class="card">
+    <h1>La Terre, à l'échelle 1:1</h1>
+    <p>Relief, images satellite, fleuves et bâtiments réels, chargés au fil du vol. Volez comme Superman jusqu'à la Lune, Mars et au-delà, sous le vrai ciel du jour.</p>
+    <ul class="quick">
+      <li><kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> + souris</li>
+      <li><kbd>Maj</kbd> super-vitesse</li>
+      <li><kbd>F</kbd> vol ou course</li>
+    </ul>
+    <div class="bar"><i id="prog"></i></div>
+    <button id="go" disabled><span id="status">Chargement…</span></button>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
